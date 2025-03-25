@@ -194,7 +194,7 @@ class Omok:
             
 if __name__ == "__main__":
     root = tk.Tk()
-    model_path = r"vosk-model-en-us-0.22-lgraph"
+    model_path = r"vosk-model-small-en-us-0.15"
     grammar_path = r"grammar.json"
     model = SpeechRecognizer(model_path=model_path, grammar_file=grammar_path)
     game = Omok(root, model)
