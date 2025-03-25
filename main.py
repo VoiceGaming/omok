@@ -155,7 +155,7 @@ class Omok:
         elif self.state == GAME_CHECK:
             if self.check_winner(self.row, self.col):
                 self.label.config(text=f"{self.current_player.capitalize()} Wins")
-                self.state_label.config(text=f"Do you want to play again?")
+                self.state_label.config(text=f"Do you want to play again? (Yes/No)")
                 self.flg = True
                 self.state = GAME_OVER
                 
@@ -177,7 +177,7 @@ class Omok:
                         self.reset_board()
                         self.state_label.config(text=f"Voice Recognition...")
                         self.flg = True
-                        self.state = VOICE_INPUT
+                        self.state = LOADING
                         break
                     
                     elif yes_or_no_or_error == NO:
