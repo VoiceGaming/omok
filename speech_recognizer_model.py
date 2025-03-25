@@ -5,10 +5,11 @@ import json
 import threading
 import sys
 
+LOADING = 0
 VOICE_INPUT = 1
-VOICE_PROCESS = 2
-GAME_OVER = 3
-EXIT = 4
+VOICE_CHECK = 2
+GAME_CHECK = 3
+GAME_OVER = 4
 
 ERROR = 0
 NO = 1
