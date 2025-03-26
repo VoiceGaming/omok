@@ -107,88 +107,90 @@ class Omok:
 
     def state_machine(self):
         if self.state == LOADING:
+            self.label.config(text=" ")
             self.label.config(text="Black's Turn")
+            self.state_label.config(text=f" ")
             self.state_label.config(text=f"Voice Recognition...")
             self.state = VOICE_INPUT
         
         
         elif self.state == VOICE_INPUT:
             self.row, self.col = None, None
-            while True:
-                self.flg = False
-                result = (self.model.listen())['text']
-                self.row, self.col = self.model.parse_position_with_correction(result)
-
-                if self.row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
-                    self.display_position(self.row, self.col)
-                    self.flg = True
-                    self.state = VOICE_CHECK
-                    break
-
+            self.flg = False
+            result = (self.model.listen())['text']
+            self.row, self.col = self.model.parse_position_with_correction(result)
+            if self.row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
+                self.display_position(self.row, self.col)
+                self.flg = True
+                self.state = VOICE_CHECK
+            else:
+                self.state_label.config(text=" ")
                 self.state_label.config(text="Invalid Voice. Try again...")
         
         
         elif self.state == VOICE_CHECK:
-            while True:
-                self.flg = False
-                result = (self.model.listen())['text']
-                yes_or_no_or_error = self.model.yes_or_no(result)
+            self.flg = False
+            result = (self.model.listen())['text']
+            yes_or_no_or_error = self.model.yes_or_no(result)
                 
-                if yes_or_no_or_error != ERROR:
-                    if yes_or_no_or_error == YES:
-                        if self.place_stone_by_voice(self.row, self.col):
-                            self.flg = True
-                            self.state = GAME_CHECK
-                        else:
-                            self.state_label.config(text=f"Invalid Coordinate. Try again...")
-                            self.flg = True
-                            self.state = VOICE_INPUT
-                    
-                    elif yes_or_no_or_error == NO:
-                        self.state_label.config(text=f"Voice Recognition...")
+            if yes_or_no_or_error != ERROR:
+                if yes_or_no_or_error == YES:
+                    if self.place_stone_by_voice(self.row, self.col):
+                        self.flg = True
+                        self.state = GAME_CHECK
+                    else:
+                        self.state_label.config(text=f" ")
+                        self.state_label.config(text=f"Invalid Coordinate. Try again...")
                         self.flg = True
                         self.state = VOICE_INPUT
-                    
-                    break
+                
+                elif yes_or_no_or_error == NO:
+                    self.state_label.config(text=f" ")
+                    self.state_label.config(text=f"Voice Recognition...")
+                    self.flg = True
+                    self.state = VOICE_INPUT
                 
         
         elif self.state == GAME_CHECK:
             if self.check_winner(self.row, self.col):
+                self.label.config(text=f" ")
                 self.label.config(text=f"{self.current_player.capitalize()} Wins")
+                self.state_label.config(text=f" ")
                 self.state_label.config(text=f"Do you want to play again? (Yes/No)")
                 self.flg = True
                 self.state = GAME_OVER
                 
             else:
                 self.current_player = "white" if self.current_player == "black" else "black"
+                self.label.config(text=f" ")
                 self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
+                self.state_label.config(text=f" ")
                 self.state_label.config(text=f"Voice Recognition...")
                 self.flg = True
                 self.state = VOICE_INPUT
             
         elif self.state == GAME_OVER:
-            while True:
-                self.flg = False
-                result = (self.model.listen())['text']
-                yes_or_no_or_error = self.model.yes_or_no(result)
+            self.flg = False
+            result = (self.model.listen())['text']
+            yes_or_no_or_error = self.model.yes_or_no(result)
 
-                if yes_or_no_or_error != ERROR:
-                    if yes_or_no_or_error == YES:
-                        self.reset_board()
-                        self.state_label.config(text=f"Voice Recognition...")
-                        self.flg = True
-                        self.state = LOADING
-                        break
-                    
-                    elif yes_or_no_or_error == NO:
-                        self.root.quit()
-                        break
+            if yes_or_no_or_error != ERROR:
+                if yes_or_no_or_error == YES:
+                    self.reset_board()
+                    self.state_label.config(text=f" ")
+                    self.state_label.config(text=f"Voice Recognition...")
+                    self.flg = True
+                    self.state = LOADING
+                
+                elif yes_or_no_or_error == NO:
+                    self.root.quit()
         
-        self.root.after(10, self.state_machine)    
+        self.root.after(5, self.state_machine)    
             
     def display_position(self, row, col):
         row_chr = chr(row + ord('A') - 1)
         col_chr = str(col)
+        self.state_label.config(text=" ")
         self.state_label.config(text=(row_chr+col_chr)+" is right? (Yes/No)")
 
             

@@ -2,7 +2,6 @@ import vosk
 import sounddevice as sd
 import queue
 import json
-import threading
 import sys
 
 LOADING = 0
@@ -37,7 +36,7 @@ class SpeechRecognizer:
         self.audio_queue.put(bytes(indata))
 
     def listen(self):
-        self.stream = sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, dtype='int16',
+        self.stream = sd.RawInputStream(samplerate=self.samplerate, blocksize=1500, dtype='int16',
                                         channels=1, callback=self.callback)
         self.stream.start()
         
