@@ -73,6 +73,9 @@ class SpeechRecognizer:
             "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14
         }
 
+        if word not in word_map:
+            return None
+        
         return word_map[word]
 
     def parse_position_with_correction(self, position):
