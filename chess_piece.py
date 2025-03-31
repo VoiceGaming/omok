@@ -9,6 +9,9 @@ class ChessPiece:
         
     def can_move(self, target_row, target_col):
         raise NotImplementedError
+    
+    def get_unicode(self):
+        raise NotImplementedError
         
 class Pawn(ChessPiece):
     def __init__(self, row, col, color):
@@ -24,6 +27,13 @@ class Pawn(ChessPiece):
             if dx == 0 or abs(dx) == 1:
                 return True # 체스판에서 판단
         return False
+    
+    def get_unicode(self):
+        # 폰 유니코드 반환
+        if self.color == WHITE:
+            return "♙"
+        else:
+            return "♟"
         
 class Rook(ChessPiece):
     def __init__(self, row, col, color):
@@ -31,6 +41,13 @@ class Rook(ChessPiece):
     
     def can_move(self, target_row, target_col):
         return self.row == target_row or self.col == target_col  # 같은 행 또는 열
+    
+    def get_unicode(self):
+        # 폰 유니코드 반환
+        if self.color == WHITE:
+            return "♖"
+        else:
+            return "♜"
         
 class Knight(ChessPiece):
     def __init__(self, row, col, color):
@@ -40,6 +57,13 @@ class Knight(ChessPiece):
         dy = abs(target_row - self.row)
         dx = abs(target_col - self.col)
         return (dx, dy) in [(1, 2), (2, 1)]  # L자 형태 이동
+    
+    def get_unicode(self):
+        # 폰 유니코드 반환
+        if self.color == WHITE:
+            return "♘"
+        else:
+            return "♞"
         
 class Bishop(ChessPiece):
     def __init__(self, row, col, color):
@@ -47,6 +71,12 @@ class Bishop(ChessPiece):
     
     def can_move(self, target_row, target_col):
         return abs(target_row - self.row) == abs(target_col - self.col)  # 대각선 이동
+    
+    def get_unicode(self):
+        if self.color == WHITE:
+            return "♗"
+        else:
+            return "♝"
         
 class Queen(ChessPiece):
     def __init__(self, row, col, color):
@@ -56,6 +86,12 @@ class Queen(ChessPiece):
         return (abs(target_row - self.row) == abs(target_col - self.col)) or \
                (self.row == target_row or self.col == target_col)  # 대각선 + 직선 이동
     
+    def get_unicode(self):
+        if self.color == WHITE:
+            return "♕"
+        else:
+            return "♛"
+    
     
         
 class King(ChessPiece):
@@ -64,4 +100,10 @@ class King(ChessPiece):
     
     def can_move(self, target_row, target_col):
         return max(abs(target_row - self.row), abs(target_col - self.col)) == 1  # 한 칸 이동
+    
+    def get_unicode(self):
+        if self.color == WHITE:
+            return "♔"
+        else:
+            return "♚"
         

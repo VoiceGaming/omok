@@ -18,10 +18,8 @@ class ChessGame:
         self.canvas.pack()
         
         self.board = [[None for _ in range(8)] for _ in range(8)]  # 8x8 체스 보드 생성
-        self.white_pieces = []
-        self.black_pieces = []
-        self.setup_pieces()
         self.draw_board()
+        self.setup_pieces()
         
         self.current_player = WHITE
     
@@ -29,78 +27,84 @@ class ChessGame:
         """초기 체스 기물을 배치"""
         # 폰 (Pawn) 배치
         for col in range(8):
-            self.white_pieces.append(Pawn(1, col, WHITE))  # 백 폰
-            self.black_pieces.append(Pawn(6, col, BLACK))  # 흑 폰
+            self.board[1, col] = Pawn(1, col, WHITE)    # 백 폰
+            self.board[6, col] = Pawn(6, col, BLACK)    # 흑 폰
 
         # 룩 (Rook)
         for col in (0, 7):
-            self.white_pieces.append(Rook(0, col, WHITE))  # 백 룩
-            self.black_pieces.append(Rook(7, col, BLACK))  # 흑 룩
+            self.board[0, col] = Rook(0, col, WHITE)    # 백 룩
+            self.board[7, col] = Rook(7, col, BLACK)    # 흑 룩
 
         # 나이트 (Knight)
         for col in (1, 6):
-            self.white_pieces.append(Rook(0, col, WHITE))  # 백 나이트
-            self.black_pieces.append(Rook(7, col, BLACK))  # 흑 나이트
+            self.board[0, col] = Knight(0, col, WHITE)  # 백 나이트
+            self.board[7, col] = Knight(7, col, BLACK)  # 흑 나이트
 
         # 비숍 (Bishop)
         for col in (2, 5):
-            self.white_pieces.append(Rook(0, col, WHITE))  # 백 비숍
-            self.black_pieces.append(Rook(7, col, BLACK))  # 흑 비숍
+            self.board[0, col] = Bishop(0, col, WHITE)  # 백 비숍
+            self.board[7, col] = Bishop(7, col, BLACK)  # 흑 비숍
 
         # 퀸 (Queen)
-        self.white_pieces.append(Queen(0, 3, WHITE))    # 백 퀸
-        self.black_pieces.append(Queen(7, 3, BLACK))    # 흑 퀸
+        self.board[0, 3] = Queen(0, 3, WHITE) # 백 퀸
+        self.board[7, 3] = Queen(7, 3, BLACK) # 흑 퀸
         
         # 킹 (King)
-        self.white_pieces.append(King(0, 4, WHITE))    # 백 킹
-        self.black_pieces.append(King(7, 4, BLACK))    # 흑 킹
-        
+        self.board[0, 4] = King(0, 4, WHITE)  # 백 킹
+        self.board[7, 4] = King(7, 4, BLACK)  # 흑 킹
+    
     def draw_board(self):
-        colors = ["#EEEED2", "#769656"]
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                x1, y1 = j * self.cell_size, i * self.cell_size
-                x2, y2 = x1 + self.cell_size, y1 + self.cell_size
-                color = colors[(i + j) % 2]
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="black")
+        """체스판 그리기"""
+        # 체스판의 각 칸을 그리기
+        for row in range(self.board_size):
+            for col in range(self.board_size):
+                # 칸의 좌표 계산
+                x1 = col * self.cell_size
+                y1 = row * self.cell_size
+                x2 = x1 + self.cell_size
+                y2 = y1 + self.cell_size
+                
+                # 흰색과 검은색 칸을 번갈아 그리기
+                color = "white" if (row + col) % 2 == 0 else "black"
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
 
-    # def place_pieces(self):
-    #     self.pieces = {}
-    #     piece_order = ["R", "N", "B", "Q", "K", "B", "N", "R"]
         
-    #     for i in range(self.board_size):
-    #         self.pieces[(1, i)] = self.create_piece("P", "black", 1, i)
-    #         self.pieces[(6, i)] = self.create_piece("P", "white", 6, i)
-    #         self.pieces[(0, i)] = self.create_piece(piece_order[i], "black", 0, i)
-    #         self.pieces[(7, i)] = self.create_piece(piece_order[i], "white", 7, i)
+    def update_board(self):
+        """체스판을 UI에 업데이트"""
+        self.canvas.delete("pieces")  # 이전에 그려진 모든 요소를 삭제
 
-    def create_piece(self, piece, color, row, col):
-        x, y = col * self.cell_size + self.cell_size // 2, row * self.cell_size + self.cell_size // 2
-        piece_id = self.canvas.create_text(x, y, text=piece, font=("Arial", 24, "bold"), fill=color)
-        return (piece, color, piece_id)
-    
-    def on_click(self, event):
-        col, row = event.x // self.cell_size, event.y // self.cell_size
-        
-        if self.selected_piece:
-            self.move_piece(self.selected_piece, row, col)
-            self.selected_piece = None
-        elif (row, col) in self.pieces and self.pieces[(row, col)][1] == self.current_player:
-            self.selected_piece = (row, col)
-    
-    def move_piece(self, from_pos, to_row, to_col):
-        from_row, from_col = from_pos
-        
-        if (to_row, to_col) in self.pieces and self.pieces[(to_row, to_col)][1] == self.current_player:
-            return
-        
-        piece, color, piece_id = self.pieces.pop(from_pos)
-        x, y = to_col * self.cell_size + self.cell_size // 2, to_row * self.cell_size + self.cell_size // 2
-        self.canvas.coords(piece_id, x, y)
-        self.pieces[(to_row, to_col)] = (piece, color, piece_id)
-        
-        self.current_player = "black" if self.current_player == "white" else "white"
-        self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
+        # 각 기물을 체스판에 유니코드로 그리기
+        for row in range(self.board_size):
+            for col in range(self.board_size):
+                piece = self.board[row][col]
+                if piece:
+                    # 유니코드 기물 출력
+                    piece_unicode = piece.get_unicode()  # 각 기물의 유니코드 반환하는 메소드 필요
+                    x1 = col * self.cell_size
+                    y1 = row * self.cell_size
+                    self.canvas.create_text((x1 + x1 + self.cell_size) / 2, (y1 + y1 + self.cell_size) / 2,
+                                            text=piece_unicode, font=("Arial", 24, "bold"), tags="pieces")
+
+        # 턴 표시 업데이트
+        if self.current_player == WHITE:
+            self.label.config(text="White's Turn")
+        else:
+            self.label.config(text="Black's Turn")
+            
+    def move_piece(self, from_row, from_col, to_row, to_col):
+        if ~self.board[from_row, from_col]:
+            return False
+        elif self.board[from_row, from_col].color != self.current_player:
+            return False
+        elif ~self.board[to_row, to_col] or self.board[to_row, to_col].color != self.current_player:
+            if self.board[from_row, from_col].can_move(to_row, to_col):
+                self.board[to_row, to_col] = self.board[from_row, from_col]
+                self.board[from_row, from_col] = None
+                return True
+            else:
+                return False
+        else:
+            return False
 
 if __name__ == "__main__":
     root = tk.Tk()
