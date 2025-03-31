@@ -14,13 +14,21 @@ ERROR = 0
 NO = 1
 YES = 2
 
+OMOK = False
+CHESS = True
+
 class SpeechRecognizer:
-    def __init__(self, model_path, grammar_file, samplerate=16000):
+    def __init__(self, model_path, grammar_file, samplerate=16000, game=OMOK):
         self.model_path = model_path
         self.grammar_file = grammar_file
         self.samplerate = samplerate
         self.model = vosk.Model(model_path)
         self.recognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
+        
+        if game==OMOK:
+            self.blocksize = 1500
+        else:
+            self.blocksize = 7000
         
         with open(self.grammar_file, "r", encoding="utf-8") as f:
             grammar_data = json.load(f)
@@ -36,6 +44,18 @@ class SpeechRecognizer:
         self.audio_queue.put(bytes(indata))
 
     def listen(self):
+        self.stream = sd.RawInputStream(samplerate=self.samplerate, blocksize=self.blocksize, dtype='int16',
+                                        channels=1, callback=self.callback)
+        self.stream.start()
+        
+        while True:
+            data = self.audio_queue.get()
+            if self.recognizer.AcceptWaveform(data):
+                result = json.loads(self.recognizer.Result())
+                self.stop()  # 음성 인식 완료 후 종료
+                return result
+            
+    def listen_yes_or_no(self):
         self.stream = sd.RawInputStream(samplerate=self.samplerate, blocksize=1500, dtype='int16',
                                         channels=1, callback=self.callback)
         self.stream.start()
@@ -99,3 +119,38 @@ class SpeechRecognizer:
         row = ord(row_char.upper()) - ord('A') + 1
 
         return row, col
+    
+    
+    def word_to_number_chess(self, word):
+        # 숫자 단어를 숫자로 매핑
+        word_map = {
+            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "six": 6, "seven": 7, "eight": 8
+        }
+
+        if word not in word_map:
+            return None
+        
+        return word_map[word]
+    
+    
+    def parse_position_with_correction_chess(self, position):
+        words = position.lower().split()
+        if len(words) != 5 or words[2] != "two":
+            return None, None, None, None
+        
+        from_col_char = words[0] if words[0] != "eight" else "a"
+        from_row_str = words[1] if words[1] != "a" else "eight"
+        to_col_char = words[3] if words[3] != "eight" else "a"
+        to_row_str = words[4] if words[4] != "a" else "eight"
+
+        from_row = self.word_to_number_omok(from_row_str)
+        to_row = self.word_to_number_omok(to_row_str)
+        
+        if not from_col_char.isalpha() or not from_row or not to_col_char.isalpha() or not to_row:
+            return None, None, None, None
+
+        from_col = ord(from_col_char) - ord('a')
+        to_col = ord(from_col_char) - ord('a')
+        
+        return 8-from_row, from_col, 8-to_row, to_col

@@ -2,10 +2,12 @@ import tkinter as tk
 from tkinter import messagebox
 from chess_piece import Pawn, Rook, Knight, Bishop, Queen, King, WHITE, BLACK
 from speech_recognizer_model import SpeechRecognizer,\
-    LOADING, VOICE_INPUT, VOICE_CHECK, GAME_CHECK, GAME_OVER, ERROR, NO, YES
+    LOADING, VOICE_INPUT, VOICE_CHECK, GAME_CHECK, GAME_OVER, ERROR, NO, YES, CHESS
+    
+FIRST = 2
     
 class ChessGame:
-    def __init__(self, root):
+    def __init__(self, root, model):
         self.root = root
         self.root.title("Chess Game")
         
@@ -14,7 +16,7 @@ class ChessGame:
         self.canvas_size = self.board_size * self.cell_size
         
         self.current_player = WHITE
-        self.label = tk.Label(root, text="White's Turn", font=("Arial", 16, "bold"))
+        self.label = tk.Label(root, text="LOADING...", font=("Arial", 16, "bold"))
         self.label.pack()
         
         self.state_label = tk.Label(root, text=" ", font=("Arial", 12))
@@ -28,12 +30,18 @@ class ChessGame:
         self.reset_board()
         self.update_board()
         
+        self.model = model
+        
         self.game_set = False
+        self.first = FIRST
         
         self.state = LOADING
         
-        self.row = None
-        self.col = None
+        self.from_row = None
+        self.from_col = None
+        self.to_row = None
+        self.to_col = None
+        
         self.flg = True
         
         self.root.after(8000, self.state_machine)
@@ -43,6 +51,8 @@ class ChessGame:
         self.board = [[None for _ in range(8)] for _ in range(8)]  # 8x8 체스 보드 생성
         self.current_player = WHITE
         self.game_set = False
+        self.first = FIRST
+
         # 폰 (Pawn) 배치
         for col in range(8):
             self.board[6][col] = Pawn(6, col, WHITE)    # 백 폰
@@ -113,29 +123,35 @@ class ChessGame:
                                                 text=piece_unicode, font=("Arial", 25, 'bold'), tags="pieces")
 
         # 턴 표시 업데이트
-        if self.current_player == WHITE:
-            self.label.config(text="White's Turn")
-        else:
-            self.label.config(text="Black's Turn")
+        # if self.current_player == WHITE:
+        #     self.label.config(text="White's Turn")
+        # else:
+        #     self.label.config(text="Black's Turn")
             
     def move_piece(self, from_row, from_col, to_row, to_col):
-        if ~self.board[from_row][from_col]:
+        if self.board[from_row][from_col] is None:
             return False
         elif self.board[from_row][from_col].color != self.current_player:
             return False
-        elif self.board[from_row][from_col].can_move(to_row, to_col):
-            if ~self.board[to_row][to_col]:
+        elif self.board[from_row][from_col].can_move(to_row, to_col, self.first):
+            if self.board[to_row][to_col] is None:
                 self.board[to_row][to_col] = self.board[from_row][from_col]
                 self.board[from_row][from_col] = None
+                self.board[to_row][to_col].row, self.board[to_row][to_col].row = to_row, to_col
                 return True
             elif self.board[to_row][to_col].color != self.current_player:
                 if self.board[to_row][to_col].is_king:
                     self.game_set = True
-                    self.board[to_row][to_col] = self.board[from_row][from_col]
-                    self.board[from_row][from_col] = None
-                    return True
-                else:
-                    return True
+                elif self.board[to_row][to_col].is_pawn:
+                    dy = to_row - from_row
+                    if dy != (-1 if self.color == WHITE else 1) or abs(to_col-from_col) != 1:
+                        return False
+                self.board[to_row][to_col] = self.board[from_row][from_col]
+                self.board[from_row][from_col] = None
+                self.board[to_row][to_col].row, self.board[to_row][to_col].row = to_row, to_col
+                return True
+            else:
+                return False
         else:
             return False
         
@@ -150,12 +166,12 @@ class ChessGame:
         
         
         elif self.state == VOICE_INPUT:
-            self.row, self.col = None, None
+            self.from_row, self.from_col, self.to_row, self.to_col = None, None, None, None
             self.flg = False
             result = (self.model.listen())['text']
-            self.row, self.col = self.model.parse_position_with_correction(result)
-            if self.row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
-                self.display_position(self.row, self.col)
+            self.from_row, self.from_col, self.to_row, self.to_col = self.model.parse_position_with_correction_chess(result)
+            if self.from_row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
+                self.display_position()
                 self.flg = True
                 self.state = VOICE_CHECK
             else:
@@ -165,13 +181,14 @@ class ChessGame:
         
         elif self.state == VOICE_CHECK:
             self.flg = False
-            result = (self.model.listen())['text']
+            result = (self.model.listen_yes_or_no())['text']
             yes_or_no_or_error = self.model.yes_or_no(result)
                 
             if yes_or_no_or_error != ERROR:
                 if yes_or_no_or_error == YES:
-                    if self.place_stone_by_voice(self.row, self.col):
+                    if self.move_piece(self.from_row, self.from_col, self.to_row, self.to_col):
                         self.flg = True
+                        self.first = max(self.first-1, 0)
                         self.state = GAME_CHECK
                     else:
                         self.state_label.config(text=f" ")
@@ -187,7 +204,8 @@ class ChessGame:
                 
         
         elif self.state == GAME_CHECK:
-            if self.check_winner(self.row, self.col):
+            self.update_board()
+            if self.game_set:
                 self.label.config(text=f" ")
                 self.label.config(text=f"{self.current_player.capitalize()} Wins")
                 self.state_label.config(text=f" ")
@@ -196,22 +214,23 @@ class ChessGame:
                 self.state = GAME_OVER
                 
             else:
-                self.current_player = "white" if self.current_player == "black" else "black"
+                self.current_player = WHITE if self.current_player == BLACK else BLACK
                 self.label.config(text=f" ")
                 self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
-                self.state_label.config(text=f" ")
+                self.state_label.config(text=f"")
                 self.state_label.config(text=f"Voice Recognition...")
                 self.flg = True
                 self.state = VOICE_INPUT
             
         elif self.state == GAME_OVER:
             self.flg = False
-            result = (self.model.listen())['text']
+            result = (self.model.listen_yes_or_no())['text']
             yes_or_no_or_error = self.model.yes_or_no(result)
 
             if yes_or_no_or_error != ERROR:
                 if yes_or_no_or_error == YES:
                     self.reset_board()
+                    self.update_board()
                     self.state_label.config(text=f" ")
                     self.state_label.config(text=f"Voice Recognition...")
                     self.flg = True
@@ -222,15 +241,21 @@ class ChessGame:
         
         self.root.after(5, self.state_machine)    
             
-    def display_position(self, row, col):
-        row_chr = chr(row + ord('A') - 1)
-        col_chr = str(col)
-        self.state_label.config(text=" ")
-        self.state_label.config(text=(row_chr+col_chr)+" is right? (Yes/No)")
+    def display_position(self):
+        from_col_chr = chr(self.from_col + ord('A'))
+        to_col_chr = chr(self.to_col + ord('A'))
         
-    
+        from_row_chr = str(8-self.from_row)
+        to_row_chr = str(8-self.to_row)
+        
+        self.state_label.config(text=" ")
+        self.state_label.config(text=(from_col_chr+from_row_chr)+" to "+ (to_col_chr+to_row_chr) + " is right? (Yes/No)")
+        
 
 if __name__ == "__main__":
     root = tk.Tk()
-    game = ChessGame(root)
+    model_path = r"vosk-model-small-en-us-0.15"
+    grammar_path = r"grammar_chess.json"
+    model = SpeechRecognizer(model_path=model_path, grammar_file=grammar_path, game=CHESS)
+    game = ChessGame(root, model)
     root.mainloop()
