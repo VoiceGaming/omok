@@ -21,9 +21,9 @@ class Pawn(ChessPiece):
     def can_move(self, target_row, target_col):
         dy = target_row - self.row
         dx = target_col - self.col
-        if self.first and dy == 2 * (1 if self.color == WHITE else -1) and dx == 0:
+        if self.first and dy == 2 * (-1 if self.color == WHITE else 1) and dx == 0:
             return True  # 처음에만 두 칸 이동 가능
-        if dy == (1 if self.color == WHITE else -1):
+        if dy == (-1 if self.color == WHITE else 1):
             if dx == 0 or abs(dx) == 1:
                 return True # 체스판에서 판단
         return False
