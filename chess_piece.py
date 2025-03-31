@@ -6,6 +6,7 @@ class ChessPiece:
         self.row = row
         self.col = col
         self.color = color
+        self.is_king = False
         
     def can_move(self, target_row, target_col):
         raise NotImplementedError
@@ -97,6 +98,7 @@ class Queen(ChessPiece):
 class King(ChessPiece):
     def __init__(self, row, col, color):
         super().__init__(row, col, color)
+        self.is_king = True
     
     def can_move(self, target_row, target_col):
         return max(abs(target_row - self.row), abs(target_col - self.col)) == 1  # 한 칸 이동
@@ -106,4 +108,3 @@ class King(ChessPiece):
             return "♔"
         else:
             return "♚"
-        

@@ -65,7 +65,7 @@ class SpeechRecognizer:
         else:
             return ERROR
         
-    def word_to_number(self, word):
+    def word_to_number_omok(self, word):
         # 숫자 단어를 숫자로 매핑
         word_map = {
             "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
@@ -78,7 +78,7 @@ class SpeechRecognizer:
         
         return word_map[word]
 
-    def parse_position_with_correction(self, position):
+    def parse_position_with_correction_omok(self, position):
         words = position.lower().split()
         if len(words) != 2:
             return None, None
@@ -91,7 +91,7 @@ class SpeechRecognizer:
         if col_str == "a":
             col_str = "eight"
 
-        col = self.word_to_number(col_str)
+        col = self.word_to_number_omok(col_str)
         
         if not row_char.isalpha() or not col:
             return None, None

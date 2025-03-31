@@ -118,7 +118,7 @@ class Omok:
             self.row, self.col = None, None
             self.flg = False
             result = (self.model.listen())['text']
-            self.row, self.col = self.model.parse_position_with_correction(result)
+            self.row, self.col = self.model.parse_position_with_correction_omok(result)
             if self.row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
                 self.display_position(self.row, self.col)
                 self.flg = True
@@ -197,7 +197,7 @@ class Omok:
 if __name__ == "__main__":
     root = tk.Tk()
     model_path = r"vosk-model-small-en-us-0.15"
-    grammar_path = r"grammar.json"
+    grammar_path = r"grammar_omok.json"
     model = SpeechRecognizer(model_path=model_path, grammar_file=grammar_path)
     game = Omok(root, model)
     root.mainloop()

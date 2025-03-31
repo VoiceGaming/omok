@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 from chess_piece import Pawn, Rook, Knight, Bishop, Queen, King, WHITE, BLACK
-
+from speech_recognizer_model import SpeechRecognizer,\
+    LOADING, VOICE_INPUT, VOICE_CHECK, GAME_CHECK, GAME_OVER, ERROR, NO, YES
+    
 class ChessGame:
     def __init__(self, root):
         self.root = root
@@ -15,17 +17,32 @@ class ChessGame:
         self.label = tk.Label(root, text="White's Turn", font=("Arial", 16, "bold"))
         self.label.pack()
         
+        self.state_label = tk.Label(root, text=" ", font=("Arial", 12))
+        self.state_label.pack()
+        
         self.canvas = tk.Canvas(root, width=self.canvas_size, height=self.canvas_size)
         self.canvas.pack()
         
-        self.board = [[None for _ in range(8)] for _ in range(8)]  # 8x8 체스 보드 생성
+        self.board = None
         self.draw_board()
-        self.setup_pieces()
+        self.reset_board()
         self.update_board()
         
+        self.game_set = False
+        
+        self.state = LOADING
+        
+        self.row = None
+        self.col = None
+        self.flg = True
+        
+        self.root.after(8000, self.state_machine)
     
-    def setup_pieces(self):
+    def reset_board(self):
         """초기 체스 기물을 배치"""
+        self.board = [[None for _ in range(8)] for _ in range(8)]  # 8x8 체스 보드 생성
+        self.current_player = WHITE
+        self.game_set = False
         # 폰 (Pawn) 배치
         for col in range(8):
             self.board[6][col] = Pawn(6, col, WHITE)    # 백 폰
@@ -56,7 +73,6 @@ class ChessGame:
     
     def draw_board(self):
         """체스판 그리기"""
-        # 체스판의 각 칸을 그리기
         for row in range(self.board_size):
             for col in range(self.board_size):
                 # 칸의 좌표 계산
@@ -68,19 +84,13 @@ class ChessGame:
                 # 흰색과 검은색 칸을 번갈아 그리기
                 color = "#F0DAB5" if (row + col) % 2 == 0 else "#B58763"
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
-        
-        # 좌표 (A-H, 1-8) 그리기
-        for row in range(self.board_size):
-            # 왼쪽에 행 번호 (1~8) 그리기
-            self.canvas.create_text(20, (row * self.cell_size) + self.cell_size / 2, 
-                                    text=str(8 - row), font=("Arial", 12, "bold"))
-        
-        for col in range(self.board_size):
-            # 아래에 열 알파벳 (A-H) 그리기
-            self.canvas.create_text((col * self.cell_size) + self.cell_size / 2, self.canvas_size - 20, 
-                                    text=chr(65 + col), font=("Arial", 12, "bold"))
 
-
+                # 체스 좌표(A1, B2 등) 계산
+                coord_text = f"{chr(65 + col)}{8 - row}"  # 예: A1, B2 ...
+                
+                # 각 칸의 오른쪽 위 모서리에 좌표 표시 (작은 글씨로)
+                self.canvas.create_text(x2 - 5, y1 + 5, text=coord_text, font=("Arial", 10, 'bold'), anchor="ne", fill="#B58763" if (row + col) % 2 == 0 else "#F0DAB5", tags="coordinate")
+                self.canvas.tag_raise("coordinate")
         
     def update_board(self):
         """체스판을 UI에 업데이트"""
@@ -97,10 +107,10 @@ class ChessGame:
                     y1 = row * self.cell_size
                     if piece.color == WHITE:
                         self.canvas.create_text((x1 + x1 + self.cell_size) / 2, (y1 + y1 + self.cell_size) / 2,
-                                                text=piece_unicode, font=("Arial", 40), tags="pieces")
+                                                text=piece_unicode, font=("Arial", 25), tags="pieces")
                     else:
                         self.canvas.create_text((x1 + x1 + self.cell_size) / 2, (y1 + y1 + self.cell_size) / 2,
-                                                text=piece_unicode, font=("Arial", 40, 'bold'), tags="pieces")
+                                                text=piece_unicode, font=("Arial", 25, 'bold'), tags="pieces")
 
         # 턴 표시 업데이트
         if self.current_player == WHITE:
@@ -113,15 +123,112 @@ class ChessGame:
             return False
         elif self.board[from_row][from_col].color != self.current_player:
             return False
-        elif ~self.board[to_row][to_col] or self.board[to_row][to_col].color != self.current_player:
-            if self.board[from_row][from_col].can_move(to_row, to_col):
+        elif self.board[from_row][from_col].can_move(to_row, to_col):
+            if ~self.board[to_row][to_col]:
                 self.board[to_row][to_col] = self.board[from_row][from_col]
                 self.board[from_row][from_col] = None
                 return True
-            else:
-                return False
+            elif self.board[to_row][to_col].color != self.current_player:
+                if self.board[to_row][to_col].is_king:
+                    self.game_set = True
+                    self.board[to_row][to_col] = self.board[from_row][from_col]
+                    self.board[from_row][from_col] = None
+                    return True
+                else:
+                    return True
         else:
             return False
+        
+    
+    def state_machine(self):
+        if self.state == LOADING:
+            self.label.config(text=" ")
+            self.label.config(text="White's Turn")
+            self.state_label.config(text=f" ")
+            self.state_label.config(text=f"Voice Recognition...")
+            self.state = VOICE_INPUT
+        
+        
+        elif self.state == VOICE_INPUT:
+            self.row, self.col = None, None
+            self.flg = False
+            result = (self.model.listen())['text']
+            self.row, self.col = self.model.parse_position_with_correction(result)
+            if self.row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
+                self.display_position(self.row, self.col)
+                self.flg = True
+                self.state = VOICE_CHECK
+            else:
+                self.state_label.config(text=" ")
+                self.state_label.config(text="Invalid Voice. Try again...")
+        
+        
+        elif self.state == VOICE_CHECK:
+            self.flg = False
+            result = (self.model.listen())['text']
+            yes_or_no_or_error = self.model.yes_or_no(result)
+                
+            if yes_or_no_or_error != ERROR:
+                if yes_or_no_or_error == YES:
+                    if self.place_stone_by_voice(self.row, self.col):
+                        self.flg = True
+                        self.state = GAME_CHECK
+                    else:
+                        self.state_label.config(text=f" ")
+                        self.state_label.config(text=f"Invalid Coordinate. Try again...")
+                        self.flg = True
+                        self.state = VOICE_INPUT
+                
+                elif yes_or_no_or_error == NO:
+                    self.state_label.config(text=f" ")
+                    self.state_label.config(text=f"Voice Recognition...")
+                    self.flg = True
+                    self.state = VOICE_INPUT
+                
+        
+        elif self.state == GAME_CHECK:
+            if self.check_winner(self.row, self.col):
+                self.label.config(text=f" ")
+                self.label.config(text=f"{self.current_player.capitalize()} Wins")
+                self.state_label.config(text=f" ")
+                self.state_label.config(text=f"Do you want to play again? (Yes/No)")
+                self.flg = True
+                self.state = GAME_OVER
+                
+            else:
+                self.current_player = "white" if self.current_player == "black" else "black"
+                self.label.config(text=f" ")
+                self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
+                self.state_label.config(text=f" ")
+                self.state_label.config(text=f"Voice Recognition...")
+                self.flg = True
+                self.state = VOICE_INPUT
+            
+        elif self.state == GAME_OVER:
+            self.flg = False
+            result = (self.model.listen())['text']
+            yes_or_no_or_error = self.model.yes_or_no(result)
+
+            if yes_or_no_or_error != ERROR:
+                if yes_or_no_or_error == YES:
+                    self.reset_board()
+                    self.state_label.config(text=f" ")
+                    self.state_label.config(text=f"Voice Recognition...")
+                    self.flg = True
+                    self.state = LOADING
+                
+                elif yes_or_no_or_error == NO:
+                    self.root.quit()
+        
+        self.root.after(5, self.state_machine)    
+            
+    def display_position(self, row, col):
+        row_chr = chr(row + ord('A') - 1)
+        col_chr = str(col)
+        self.state_label.config(text=" ")
+        self.state_label.config(text=(row_chr+col_chr)+" is right? (Yes/No)")
+        
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
