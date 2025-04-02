@@ -33,7 +33,6 @@ class ChessGame:
         self.model = model
         
         self.game_set = False
-        self.first = FIRST
         
         self.state = LOADING
         
@@ -51,7 +50,6 @@ class ChessGame:
         self.board = [[None for _ in range(8)] for _ in range(8)]  # 8x8 체스 보드 생성
         self.current_player = WHITE
         self.game_set = False
-        self.first = FIRST
 
         # 폰 (Pawn) 배치
         for col in range(8):
@@ -133,11 +131,12 @@ class ChessGame:
             return False
         elif self.board[from_row][from_col].color != self.current_player:
             return False
-        elif self.board[from_row][from_col].can_move(to_row, to_col, self.first):
+        elif self.board[from_row][from_col].can_move(to_row, to_col):
             if self.board[to_row][to_col] is None:
                 self.board[to_row][to_col] = self.board[from_row][from_col]
                 self.board[from_row][from_col] = None
                 self.board[to_row][to_col].row, self.board[to_row][to_col].row = to_row, to_col
+                self.board[to_row][to_col].first = False
                 return True
             elif self.board[to_row][to_col].color != self.current_player:
                 if self.board[to_row][to_col].is_king:
@@ -149,6 +148,7 @@ class ChessGame:
                 self.board[to_row][to_col] = self.board[from_row][from_col]
                 self.board[from_row][from_col] = None
                 self.board[to_row][to_col].row, self.board[to_row][to_col].row = to_row, to_col
+                self.board[to_row][to_col].first = False
                 return True
             else:
                 return False
@@ -188,7 +188,6 @@ class ChessGame:
                 if yes_or_no_or_error == YES:
                     if self.move_piece(self.from_row, self.from_col, self.to_row, self.to_col):
                         self.flg = True
-                        self.first = max(self.first-1, 0)
                         self.state = GAME_CHECK
                     else:
                         self.state_label.config(text=f" ")
@@ -207,7 +206,7 @@ class ChessGame:
             self.update_board()
             if self.game_set:
                 self.label.config(text=f" ")
-                self.label.config(text=f"{self.current_player.capitalize()} Wins")
+                self.label.config(text="White" if self.current_player==WHITE else "Black" + " Wins")
                 self.state_label.config(text=f" ")
                 self.state_label.config(text=f"Do you want to play again? (Yes/No)")
                 self.flg = True
@@ -216,7 +215,7 @@ class ChessGame:
             else:
                 self.current_player = WHITE if self.current_player == BLACK else BLACK
                 self.label.config(text=f" ")
-                self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
+                self.label.config(text="White" if self.current_player==WHITE else "Black" + 's Turn')
                 self.state_label.config(text=f"")
                 self.state_label.config(text=f"Voice Recognition...")
                 self.flg = True

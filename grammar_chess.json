@@ -1,8 +1,7 @@
 {
     "words": [
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-        "eleven", "twelve", "thirteen", "fourteen",
+        "a", "b", "c", "d", "e", "f", "g", "h",
+        "one", "two", "three", "four", "five", "six", "seven", "eight",
         "yes", "no"
     ]
 }
