@@ -151,6 +151,6 @@ class SpeechRecognizer:
             return None, None, None, None
 
         from_col = ord(from_col_char) - ord('a')
-        to_col = ord(from_col_char) - ord('a')
+        to_col = ord(to_col_char) - ord('a')
         
         return 8-from_row, from_col, 8-to_row, to_col
