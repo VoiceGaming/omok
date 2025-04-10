@@ -102,14 +102,18 @@ class Omok:
         self.draw_board()
         self.board = [[None] * self.board_size for _ in range(self.board_size)]
         self.current_player = "black"
+        self.label.config(text=f" ")
+        self.label.update_idletasks()
         self.label.config(text="Black's Turn")
 
 
     def state_machine(self):
         if self.state == LOADING:
             self.label.config(text=" ")
+            self.label.update_idletasks()
             self.label.config(text="Black's Turn")
-            self.state_label.config(text=f" ")
+            self.state_label.config(text=" ")
+            self.state_label.update_idletasks()
             self.state_label.config(text=f"Voice Recognition...")
             self.state = VOICE_INPUT
         
@@ -125,6 +129,7 @@ class Omok:
                 self.state = VOICE_CHECK
             else:
                 self.state_label.config(text=" ")
+                self.state_label.update_idletasks()
                 self.state_label.config(text="Invalid Voice. Try again...")
         
         
@@ -140,12 +145,14 @@ class Omok:
                         self.state = GAME_CHECK
                     else:
                         self.state_label.config(text=f" ")
+                        self.state_label.update_idletasks()
                         self.state_label.config(text=f"Invalid Coordinate. Try again...")
                         self.flg = True
                         self.state = VOICE_INPUT
                 
                 elif yes_or_no_or_error == NO:
                     self.state_label.config(text=f" ")
+                    self.state_label.update_idletasks()
                     self.state_label.config(text=f"Voice Recognition...")
                     self.flg = True
                     self.state = VOICE_INPUT
@@ -154,8 +161,10 @@ class Omok:
         elif self.state == GAME_CHECK:
             if self.check_winner(self.row, self.col):
                 self.label.config(text=f" ")
+                self.label.update_idletasks()
                 self.label.config(text=f"{self.current_player.capitalize()} Wins")
                 self.state_label.config(text=f" ")
+                self.state_label.update_idletasks()
                 self.state_label.config(text=f"Do you want to play again? (Yes/No)")
                 self.flg = True
                 self.state = GAME_OVER
@@ -163,8 +172,10 @@ class Omok:
             else:
                 self.current_player = "white" if self.current_player == "black" else "black"
                 self.label.config(text=f" ")
+                self.label.update_idletasks()
                 self.label.config(text=f"{self.current_player.capitalize()}'s Turn")
                 self.state_label.config(text=f" ")
+                self.state_label.update_idletasks()
                 self.state_label.config(text=f"Voice Recognition...")
                 self.flg = True
                 self.state = VOICE_INPUT
@@ -178,6 +189,7 @@ class Omok:
                 if yes_or_no_or_error == YES:
                     self.reset_board()
                     self.state_label.config(text=f" ")
+                    self.state_label.update_idletasks()
                     self.state_label.config(text=f"Voice Recognition...")
                     self.flg = True
                     self.state = LOADING
@@ -191,6 +203,7 @@ class Omok:
         row_chr = chr(row + ord('A') - 1)
         col_chr = str(col)
         self.state_label.config(text=" ")
+        self.state_label.update_idletasks()
         self.state_label.config(text=(row_chr+col_chr)+" is right? (Yes/No)")
 
             
