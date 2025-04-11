@@ -4,3 +4,4 @@ vosk-model-en-us-0.22-lgraph
 vosk-model-small-ko-0.22
 test.py
 ui_test.py
+chess_test.py
