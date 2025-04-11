@@ -141,6 +141,9 @@ class Omok:
                 self.state = LOADING
             elif yes_or_no_or_error == NO:
                 self.root.quit()
+        else:
+            self.flg = True
+            self.state = GAME_OVER
 
     def state_machine(self):
         if self.flg:
@@ -173,6 +176,9 @@ class Omok:
                     self.flg = False
                     self.state = VOICE_INPUT
                     threading.Thread(target=self.voice_input_thread, daemon=True).start()
+            elif self.state == GAME_OVER:
+                self.flg = False
+                threading.Thread(target=self.game_over_check_thread, daemon=True).start()
 
         self.root.after(10, self.state_machine)
 
