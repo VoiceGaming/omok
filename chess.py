@@ -48,7 +48,7 @@ class ChessGame:
         
         self.flg = True
         
-        self.root.after(8000, self.state_machine)
+        self.root.after(1000, self.state_machine)
     
     def reset_board(self):
         """초기 체스 기물을 배치"""
@@ -178,114 +178,29 @@ class ChessGame:
         # 적군 잡기
         if target.color != self.current_player:
             if piece.is_pawn:
-                dy = to_row - from_row
                 dx = abs(to_col - from_col)
-                forward = -1 if piece.color == WHITE else 1
-
                 # 대각선이 아닌 경우 공격 불가
-                if dy != forward or dx != 1:
+                if dx != 1:
                     return False
-
-            if target.is_king:
-                self.game_set = True
-
-            self.board[to_row][to_col] = piece
-            self.board[from_row][from_col] = None
-            piece.first = False
+                if to_row == 0 or to_row == 7:
+                    self.board[to_row][to_col] = Queen(piece.color)
+                else:
+                    self.board[to_row][to_col] = piece
+                self.board[from_row][from_col] = None
+                    
+                if target.is_king:
+                    self.game_set = True
+            else:
+                self.board[to_row][to_col] = piece
+                self.board[from_row][from_col] = None
+                piece.first = False
+                if target.is_king:
+                    self.game_set = True
+                    
             return True
 
         # 같은 색 기물은 못 잡음
         return False
-        
-    
-    def state_machine(self):
-        if self.state == LOADING:
-            self.label.config(text="White's Turn")
-            self.state_label.config(text=f"Voice Recognition...")
-            self.state = VOICE_INPUT_1
-        
-        
-        elif self.state == VOICE_INPUT_1:
-            self.from_row, self.from_col, self.to_row, self.to_col = None, None, None, None
-            self.flg = False
-            result = (self.model.listen())['text']
-            self.from_row, self.from_col = self.model.parse_position_with_correction_chess(result)
-            if self.from_row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
-                self.display_position_1()
-                self.flg = True
-                self.state = VOICE_INPUT_2
-            else:
-                self.state_label.config(text="Invalid Voice. Try again...")
-                
-        
-        elif self.state == VOICE_INPUT_2:
-            self.flg = False
-            result = (self.model.listen())['text']
-            if result == 'cancel':
-                self.state_label.config(text=f"Voice Recognition...")
-                self.flg = True
-                self.state = VOICE_INPUT_1
-            else:
-                self.to_row, self.to_col = self.model.parse_position_with_correction_chess(result)
-                if self.to_row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
-                    self.display_position_2()
-                    self.flg = True
-                    self.state = VOICE_CHECK
-        
-        
-        elif self.state == VOICE_CHECK:
-            self.flg = False
-            result = (self.model.listen())['text']
-            yes_or_no_or_error = self.model.yes_or_no(result)
-                
-            if yes_or_no_or_error != ERROR:
-                if yes_or_no_or_error == YES:
-                    if self.move_piece(self.from_row, self.from_col, self.to_row, self.to_col):
-                        self.flg = True
-                        self.state = GAME_CHECK
-                    else:
-                        self.state_label.config(text=f"Invalid Coordinate. Try again...")
-                        self.flg = True
-                        self.state = VOICE_INPUT_1
-                
-                elif yes_or_no_or_error == NO:
-                    self.state_label.config(text=f"Voice Recognition...")
-                    self.flg = True
-                    self.state = VOICE_INPUT_1
-                
-        
-        elif self.state == GAME_CHECK:
-            self.update_board()
-            if self.game_set:
-                self.label.config(text=("White" if self.current_player==WHITE else "Black") + " Wins")
-                self.state_label.config(text=f"Do you want to play again? (Yes/No)")
-                self.flg = True
-                self.state = GAME_OVER
-                
-            else:
-                self.current_player = WHITE if self.current_player == BLACK else BLACK
-                self.label.config(text=("White" if self.current_player==WHITE else "Black") + 's Turn')
-                self.state_label.config(text=f"Voice Recognition...")
-                self.flg = True
-                self.state = VOICE_INPUT_1
-            
-        elif self.state == GAME_OVER:
-            self.flg = False
-            result = (self.model.listen())['text']
-            yes_or_no_or_error = self.model.yes_or_no(result)
-
-            if yes_or_no_or_error != ERROR:
-                if yes_or_no_or_error == YES:
-                    self.reset_board()
-                    self.update_board()
-                    self.state_label.config(text=f"Voice Recognition...")
-                    self.flg = True
-                    self.state = LOADING
-                
-                elif yes_or_no_or_error == NO:
-                    self.root.quit()
-        
-        self.root.after(5, self.state_machine)    
             
     def display_position_1(self):
         from_col_chr = chr(self.from_col + ord('A'))
@@ -301,6 +216,119 @@ class ChessGame:
         to_row_chr = str(8-self.to_row)
         
         self.state_label.config(text=(from_col_chr+from_row_chr)+" to "+ (to_col_chr+to_row_chr) + " is right? (Yes/No)")
+        
+    def voice_input_1_thread(self):
+        self.from_row, self.from_col, self.to_row, self.to_col = None, None, None, None
+        result = self.model.listen()['text']
+        self.root.after(0, lambda: self.handle_voice_input_1(result))
+        
+    def handle_voice_input_1(self, result):
+        self.from_row, self.from_col = self.model.parse_position_with_correction_chess(result)
+        if self.from_row is not None:  # 음성 입력이 올바르면 다음 상태로 이동
+            self.display_position_1()
+            self.state = VOICE_INPUT_2
+        else:
+            self.state_label.config(text="Invalid Voice. Try again...")
+            self.state = VOICE_INPUT_1
+        self.flg = True
+    
+    def voice_input_2_thread(self):
+        result = self.model.listen()['text']
+        self.root.after(0, lambda: self.handle_voice_input_2(result))
+        
+    def handle_voice_input_2(self, result):
+        if result == 'cancel' or result == 'no':
+                self.state_label.config(text=f"Voice Recognition...")
+                self.state = VOICE_INPUT_1
+        else:
+            self.to_row, self.to_col = self.model.parse_position_with_correction_chess(result)
+            if self.to_row is not None:
+                self.display_position_2()
+                self.state = VOICE_CHECK
+            else:
+                self.state = VOICE_INPUT_2
+        
+        self.flg = True
+
+    def voice_check_thread(self):
+        result = self.model.listen()['text']
+        self.root.after(0, lambda: self.handle_voice_check(result))
+
+    def handle_voice_check(self, result):
+        yes_or_no_or_error = self.model.yes_or_no(result)
+        if yes_or_no_or_error != ERROR:
+            if yes_or_no_or_error == YES:
+                if self.move_piece(self.from_row, self.from_col, self.to_row, self.to_col):
+                    self.state = GAME_CHECK
+                else:
+                    self.state_label.config(text=f"Invalid Coordinate. Try again...")
+                    self.state = VOICE_INPUT_1
+            elif yes_or_no_or_error == NO:
+                self.state_label.config(text=f"Voice Recognition...")
+                self.state = VOICE_INPUT_1
+                
+        self.flg = True
+        
+    def game_over_check_thread(self):
+        result = self.model.listen()['text']
+        self.root.after(0, lambda: self.handle_game_over_check(result))
+
+    def handle_game_over_check(self, result):
+        yes_or_no_or_error = self.model.yes_or_no(result)
+        if yes_or_no_or_error != ERROR:
+            if yes_or_no_or_error == YES:
+                self.reset_board()
+                self.update_board()
+                self.state_label.config(text="Voice Recognition...")
+                self.state = LOADING
+            elif yes_or_no_or_error == NO:
+                self.root.quit()
+        else:
+            self.state = GAME_OVER
+        self.flg = True
+        
+    def state_machine(self):
+        if self.flg:
+            if self.state == LOADING:
+                self.label.config(text="White's Turn")
+                self.state_label.config(text="Voice Recognition...")
+                self.flg = False
+                self.state = VOICE_INPUT_1
+                threading.Thread(target=self.voice_input_1_thread, daemon=True).start()
+
+            elif self.state == VOICE_INPUT_1:
+                self.flg = False
+                threading.Thread(target=self.voice_input_1_thread, daemon=True).start()
+                
+            elif self.state == VOICE_INPUT_2:
+                self.flg = False
+                threading.Thread(target=self.voice_input_2_thread, daemon=True).start()
+
+            elif self.state == VOICE_CHECK:
+                self.flg = False
+                threading.Thread(target=self.voice_check_thread, daemon=True).start()
+
+            elif self.state == GAME_CHECK:
+                self.update_board()
+                if self.game_set:
+                    self.label.config(text=("White" if self.current_player==WHITE else "Black") + " Wins")
+                    self.state_label.config(text=f"Do you want to play again? (Yes/No)")
+                    self.flg = False
+                    self.state = GAME_OVER
+                    threading.Thread(target=self.game_over_check_thread, daemon=True).start()
+                else:
+                    self.current_player = WHITE if self.current_player == BLACK else BLACK
+                    self.label.config(text=("White" if self.current_player==WHITE else "Black") + 's Turn')
+                    self.state_label.config(text=f"Voice Recognition...")
+                    self.flg = False
+                    self.state = VOICE_INPUT_1
+                    threading.Thread(target=self.voice_input_1_thread, daemon=True).start()
+            
+            elif self.state == GAME_OVER:
+                self.flg = False
+                threading.Thread(target=self.game_over_check_thread, daemon=True).start()
+
+        self.root.after(10, self.state_machine)
         
 
 if __name__ == "__main__":
