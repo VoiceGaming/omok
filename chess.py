@@ -48,8 +48,6 @@ class ChessGame:
         
         self.flg = True
         
-        self.voice_result = None
-        
         self.root.after(8000, self.state_machine)
     
     def reset_board(self):
@@ -163,8 +161,14 @@ class ChessGame:
 
         # 빈 칸 이동
         if target is None:
-            if piece.is_pawn and (to_row==0 or to_row==7):
-                self.board[to_row][to_col] = Queen(piece.color)
+            if piece.is_pawn:
+                if to_col != from_col:
+                    return False
+                # 승진
+                if to_row == 0 or to_row == 7:
+                    self.board[to_row][to_col] = Queen(piece.color)
+                else:
+                    self.board[to_row][to_col] = piece
             else:
                 self.board[to_row][to_col] = piece
             self.board[from_row][from_col] = None
@@ -173,15 +177,15 @@ class ChessGame:
 
         # 적군 잡기
         if target.color != self.current_player:
-            # 폰이면 대각선 공격인지 확인
             if piece.is_pawn:
                 dy = to_row - from_row
                 dx = abs(to_col - from_col)
                 forward = -1 if piece.color == WHITE else 1
+
+                # 대각선이 아닌 경우 공격 불가
                 if dy != forward or dx != 1:
                     return False
 
-            # 킹 잡으면 게임 종료
             if target.is_king:
                 self.game_set = True
 
@@ -190,7 +194,8 @@ class ChessGame:
             piece.first = False
             return True
 
-        return False  # 아군 기물이 있는 칸으로는 못 감
+        # 같은 색 기물은 못 잡음
+        return False
         
     
     def state_machine(self):

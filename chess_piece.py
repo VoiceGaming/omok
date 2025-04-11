@@ -18,7 +18,7 @@ class ChessPiece:
 class Pawn(ChessPiece):
     def __init__(self, color):
         super().__init__(color)
-        self.pawn = True
+        self.is_pawn = True
     
     def can_move(self, from_row, from_col, target_row, target_col):
         dy = target_row - from_row

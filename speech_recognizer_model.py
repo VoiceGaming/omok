@@ -54,18 +54,6 @@ class SpeechRecognizer:
                 result = json.loads(self.recognizer.Result())
                 self.stop()  # 음성 인식 완료 후 종료
                 return result
-            
-    def listen_yes_or_no(self):
-        self.stream = sd.RawInputStream(samplerate=self.samplerate, blocksize=1500, dtype='int16',
-                                        channels=1, callback=self.callback)
-        self.stream.start()
-        
-        while True:
-            data = self.audio_queue.get()
-            if self.recognizer.AcceptWaveform(data):
-                result = json.loads(self.recognizer.Result())
-                self.stop()  # 음성 인식 완료 후 종료
-                return result
 
     def stop(self):
         if self.stream:
