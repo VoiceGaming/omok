@@ -28,7 +28,7 @@ class SpeechRecognizer:
         if game==OMOK:
             self.blocksize = 1500
         else:
-            self.blocksize = 7000
+            self.blocksize = 1500
         
         with open(self.grammar_file, "r", encoding="utf-8") as f:
             grammar_data = json.load(f)
@@ -85,7 +85,7 @@ class SpeechRecognizer:
         else:
             return ERROR
         
-    def word_to_number_omok(self, word):
+    def word_to_number(self, word):
         # 숫자 단어를 숫자로 매핑
         word_map = {
             "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
@@ -111,12 +111,12 @@ class SpeechRecognizer:
         if col_str == "a":
             col_str = "eight"
 
-        col = self.word_to_number_omok(col_str)
+        col = self.word_to_number(col_str)
         
         if len(row_char)!=1 or not col or not row_char.isalpha():
             return None, None
 
-        row = ord(row_char.upper()) - ord('A') + 1
+        row = ord(row_char.upper()) - ord('A')
 
         return row, col
     
@@ -136,21 +136,22 @@ class SpeechRecognizer:
     
     def parse_position_with_correction_chess(self, position):
         words = position.lower().split()
-        if len(words) != 5 or words[2] != "two":
-            return None, None, None, None
-        
-        from_col_char = words[0] if words[0] != "eight" else "a"
-        from_row_str = words[1] if words[1] != "a" else "eight"
-        to_col_char = words[3] if words[3] != "eight" else "a"
-        to_row_str = words[4] if words[4] != "a" else "eight"
+        if len(words) != 2:
+            return None, None
 
-        from_row = self.word_to_number_omok(from_row_str)
-        to_row = self.word_to_number_omok(to_row_str)
-        
-        if len(from_col_char) != 1 or len(to_col_char) != 1 or not from_col_char.isalpha() or not from_row or not to_col_char.isalpha() or not to_row:
-            return None, None, None, None
+        col_char = words[0]
+        row_str = words[1]
 
-        from_col = ord(from_col_char) - ord('a')
-        to_col = ord(to_col_char) - ord('a')
+        if col_char == "eight":
+            col_char = "a"
+        if row_str == "a":
+            row_str = "eight"
+
+        row = self.word_to_number(row_str)
         
-        return 8-from_row, from_col, 8-to_row, to_col
+        if len(col_char)!=1 or not row or not col_char.isalpha():
+            return None, None
+
+        col = ord(col_char.upper()) - ord('A')
+
+        return 8-row, col
