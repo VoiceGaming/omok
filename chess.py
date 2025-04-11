@@ -16,10 +16,10 @@ class ChessGame:
         self.canvas_size = self.board_size * self.cell_size
         
         self.current_player = WHITE
-        self.label = tk.Label(root, text="LOADING...", font=("Arial", 16, "bold"))
+        self.label = tk.Label(root, text="LOADING...", font=("Courier", 16, "bold"), width=35, anchor='center', justify='center')
         self.label.pack()
         
-        self.state_label = tk.Label(root, text=" ", font=("Arial", 12))
+        self.state_label = tk.Label(root, text=" ", font=("Courier", 12), width=35, anchor='center', justify='center')
         self.state_label.pack()
         
         self.canvas = tk.Canvas(root, width=self.canvas_size, height=self.canvas_size)
@@ -158,11 +158,7 @@ class ChessGame:
     
     def state_machine(self):
         if self.state == LOADING:
-            self.label.config(text=" ")
-            self.label.update_idletasks()
             self.label.config(text="White's Turn")
-            self.state_label.config(text=f" ")
-            self.state_label.update_idletasks()
             self.state_label.config(text=f"Voice Recognition...")
             self.state = VOICE_INPUT
         
@@ -177,8 +173,6 @@ class ChessGame:
                 self.flg = True
                 self.state = VOICE_CHECK
             else:
-                self.state_label.config(text=" ")
-                self.state_label.update_idletasks()
                 self.state_label.config(text="Invalid Voice. Try again...")
         
         
@@ -193,15 +187,11 @@ class ChessGame:
                         self.flg = True
                         self.state = GAME_CHECK
                     else:
-                        self.state_label.config(text=f" ")
-                        self.state_label.update_idletasks()
                         self.state_label.config(text=f"Invalid Coordinate. Try again...")
                         self.flg = True
                         self.state = VOICE_INPUT
                 
                 elif yes_or_no_or_error == NO:
-                    self.state_label.config(text=f" ")
-                    self.state_label.update_idletasks()
                     self.state_label.config(text=f"Voice Recognition...")
                     self.flg = True
                     self.state = VOICE_INPUT
@@ -210,22 +200,14 @@ class ChessGame:
         elif self.state == GAME_CHECK:
             self.update_board()
             if self.game_set:
-                self.label.config(text=f" ")
-                self.label.update_idletasks()
                 self.label.config(text="White" if self.current_player==WHITE else "Black" + " Wins")
-                self.state_label.config(text=f" ")
-                self.state_label.update_idletasks()
                 self.state_label.config(text=f"Do you want to play again? (Yes/No)")
                 self.flg = True
                 self.state = GAME_OVER
                 
             else:
                 self.current_player = WHITE if self.current_player == BLACK else BLACK
-                self.label.config(text=f" ")
-                self.label.update_idletasks()
                 self.label.config(text="White" if self.current_player==WHITE else "Black" + 's Turn')
-                self.state_label.config(text=f"")
-                self.state_label.update_idletasks()
                 self.state_label.config(text=f"Voice Recognition...")
                 self.flg = True
                 self.state = VOICE_INPUT
@@ -239,8 +221,6 @@ class ChessGame:
                 if yes_or_no_or_error == YES:
                     self.reset_board()
                     self.update_board()
-                    self.state_label.config(text=f" ")
-                    self.state_label.update_idletasks()
                     self.state_label.config(text=f"Voice Recognition...")
                     self.flg = True
                     self.state = LOADING
@@ -257,8 +237,6 @@ class ChessGame:
         from_row_chr = str(8-self.from_row)
         to_row_chr = str(8-self.to_row)
         
-        self.state_label.config(text=" ")
-        self.state_label.update_idletasks()
         self.state_label.config(text=(from_col_chr+from_row_chr)+" to "+ (to_col_chr+to_row_chr) + " is right? (Yes/No)")
         
 
