@@ -147,7 +147,7 @@ class SpeechRecognizer:
         from_row = self.word_to_number_omok(from_row_str)
         to_row = self.word_to_number_omok(to_row_str)
         
-        if not from_col_char.isalpha() or not from_row or not to_col_char.isalpha() or not to_row:
+        if len(from_col_char) != 1 or len(to_col_char) != 1 or not from_col_char.isalpha() or not from_row or not to_col_char.isalpha() or not to_row:
             return None, None, None, None
 
         from_col = ord(from_col_char) - ord('a')
