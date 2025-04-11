@@ -93,7 +93,7 @@ class SpeechRecognizer:
 
         col = self.word_to_number(col_str)
         
-        if not row_char.isalpha() or not col:
+        if len(row_char)!= 1 or not col or not row_char.isalpha():
             return None, None
 
         row = ord(row_char.upper()) - ord('A') + 1
