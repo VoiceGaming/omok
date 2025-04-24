@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import messagebox
 import threading
 from speech_recognizer_model import SpeechRecognizer, \
     LOADING, VOICE_INPUT, VOICE_CHECK, GAME_CHECK, GAME_OVER, ERROR, NO, YES
